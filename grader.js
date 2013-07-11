@@ -36,6 +36,27 @@ var assertFileExists = function(infile) {
     return instr;
 };
 
+var assertUrlIsValid = function(url) {
+
+    var tempFile = "results.tmp";
+    if (fs.existsSync(tempFile)) {
+        fs.unlinkSync(tempFile);
+    }
+    
+    var rest = require("restler");
+    rest.get(url).on('complete', function(result) {
+        if (result instanceof Error) {
+            console.log("Unable to retrieve content from url: %s Error: %s. Exiting.", url, result.toString());
+            process.exit(1);
+        }
+        else {
+            fs.writeFileSync(tempFile, result);
+            return tempFile;
+        }
+    });
+    
+};
+
 var cheerioHtmlFile = function(htmlfile) {
     return cheerio.load(fs.readFileSync(htmlfile));
 };
@@ -65,8 +86,10 @@ if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
+        .option('-u, --url <url>', 'URL to check', clone(assertUrlIsValid))
         .parse(process.argv);
-    var checkJson = checkHtmlFile(program.file, program.checks);
+        
+    var checkJson = checkHtmlFile(program.file|program.url, program.checks);
     var outJson = JSON.stringify(checkJson, null, 4);
     console.log(outJson);
 } else {
