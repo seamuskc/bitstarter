@@ -36,12 +36,13 @@ var assertFileExists = function(infile) {
     return instr;
 };
 
-var assertUrlIsValid = function(url) {
+var checkUrl = function(url, checksfile) {
 
-    var tempFile = "results.tmp";
-    if (fs.existsSync(tempFile)) {
-        fs.unlinkSync(tempFile);
-    }
+    //console.log("Attempting to retrieve from url: " + url);
+    var tempFile = "results.txt";
+     if (fs.existsSync(tempFile)) {
+         fs.unlinkSync(tempFile);
+     }
     
     var rest = require("restler");
     rest.get(url).on('complete', function(result) {
@@ -50,8 +51,11 @@ var assertUrlIsValid = function(url) {
             process.exit(1);
         }
         else {
-            fs.writeFileSync(tempFile, result);
-            return tempFile;
+            //console.log(("retrieve following markup: " + result.toString()));
+            fs.writeFileSync(tempFile, result.toString());
+            var checkJson = checkHtmlFile(tempFile, checksfile);
+            var outJson = JSON.stringify(checkJson, null, 4);
+            console.log(outJson);
         }
     });
     
@@ -86,12 +90,18 @@ if(require.main == module) {
     program
         .option('-c, --checks <check_file>', 'Path to checks.json', clone(assertFileExists), CHECKSFILE_DEFAULT)
         .option('-f, --file <html_file>', 'Path to index.html', clone(assertFileExists), HTMLFILE_DEFAULT)
-        .option('-u, --url <url>', 'URL to check', clone(assertUrlIsValid))
+        .option('-u, --url <url>', 'URL to check')
         .parse(process.argv);
-        
-    var checkJson = checkHtmlFile(program.file|program.url, program.checks);
-    var outJson = JSON.stringify(checkJson, null, 4);
-    console.log(outJson);
+    
+    
+    if (program.url) {
+        checkUrl(program.url, program.checks);
+    } else {
+        var checkJson = checkHtmlFile(program.file, program.checks);
+        var outJson = JSON.stringify(checkJson, null, 4);
+        console.log(outJson);
+    } 
+    
 } else {
     exports.checkHtmlFile = checkHtmlFile;
 }
