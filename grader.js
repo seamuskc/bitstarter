@@ -36,6 +36,37 @@ var assertFileExists = function(infile) {
     return instr;
 };
 
+var cheerioHtmlFile = function(htmlfile) {
+    return cheerio.load(fs.readFileSync(htmlfile));
+};
+
+var loadChecks = function(checksfile) {
+    return JSON.parse(fs.readFileSync(checksfile));
+};
+
+var printOutput = function(output) {
+    var outJson = JSON.stringify(output, null, 4);
+    console.log(outJson);
+};
+
+var runChecks = function(checksfile, fileToCheck) {
+    
+    var checks = loadChecks(checksfile).sort();
+    var out = {};
+    for(var ii in checks) {
+        var present = fileToCheck(checks[ii]).length > 0;
+        out[checks[ii]] = present;
+    }
+    return out;
+    
+}
+
+var checkHtmlFile = function(htmlfile, checksfile) {
+    $ = cheerioHtmlFile(htmlfile);
+    return runChecks(checksfile, $)
+    
+};
+
 var checkUrl = function(url, checksfile) {
 
     console.log("Attempting to retrieve from url: " + url);
@@ -49,36 +80,11 @@ var checkUrl = function(url, checksfile) {
         else {
             //console.log(("retrieve following markup: " + result.toString()));
             $ = cheerio.load(result);
-            var checks = loadChecks(checksfile).sort();
-            var out = {};
-            for(var ii in checks) {
-                var present = $(checks[ii]).length > 0;
-                out[checks[ii]] = present;
-            }
-            var outJson = JSON.stringify(out, null, 4);
-            console.log(outJson);
+            var out = runChecks(checksfile, $);
+            printOutput(out);
         }
     });
     
-};
-
-var cheerioHtmlFile = function(htmlfile) {
-    return cheerio.load(fs.readFileSync(htmlfile));
-};
-
-var loadChecks = function(checksfile) {
-    return JSON.parse(fs.readFileSync(checksfile));
-};
-
-var checkHtmlFile = function(htmlfile, checksfile) {
-    $ = cheerioHtmlFile(htmlfile);
-    var checks = loadChecks(checksfile).sort();
-    var out = {};
-    for(var ii in checks) {
-        var present = $(checks[ii]).length > 0;
-        out[checks[ii]] = present;
-    }
-    return out;
 };
 
 var clone = function(fn) {
@@ -99,8 +105,7 @@ if(require.main == module) {
         checkUrl(program.url, program.checks);
     } else {
         var checkJson = checkHtmlFile(program.file, program.checks);
-        var outJson = JSON.stringify(checkJson, null, 4);
-        console.log(outJson);
+        printOutput(checkJson);
     } 
     
 } else {
