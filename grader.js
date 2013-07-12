@@ -38,11 +38,7 @@ var assertFileExists = function(infile) {
 
 var checkUrl = function(url, checksfile) {
 
-    //console.log("Attempting to retrieve from url: " + url);
-    var tempFile = "results.txt";
-     if (fs.existsSync(tempFile)) {
-         fs.unlinkSync(tempFile);
-     }
+    console.log("Attempting to retrieve from url: " + url);
     
     var rest = require("restler");
     rest.get(url).on('complete', function(result) {
@@ -52,9 +48,14 @@ var checkUrl = function(url, checksfile) {
         }
         else {
             //console.log(("retrieve following markup: " + result.toString()));
-            fs.writeFileSync(tempFile, result.toString());
-            var checkJson = checkHtmlFile(tempFile, checksfile);
-            var outJson = JSON.stringify(checkJson, null, 4);
+            $ = cheerio.load(result);
+            var checks = loadChecks(checksfile).sort();
+            var out = {};
+            for(var ii in checks) {
+                var present = $(checks[ii]).length > 0;
+                out[checks[ii]] = present;
+            }
+            var outJson = JSON.stringify(out, null, 4);
             console.log(outJson);
         }
     });
