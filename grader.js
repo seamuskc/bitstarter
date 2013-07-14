@@ -36,18 +36,22 @@ var assertFileExists = function(infile) {
     return instr;
 };
 
+
 var cheerioHtmlFile = function(htmlfile) {
     return cheerio.load(fs.readFileSync(htmlfile));
 };
+
 
 var loadChecks = function(checksfile) {
     return JSON.parse(fs.readFileSync(checksfile));
 };
 
+
 var printOutput = function(output) {
     var outJson = JSON.stringify(output, null, 4);
     console.log(outJson);
 };
+
 
 var runChecks = function(checksfile, fileToCheck) {
     
@@ -61,11 +65,13 @@ var runChecks = function(checksfile, fileToCheck) {
     
 }
 
+
 var checkHtmlFile = function(htmlfile, checksfile) {
     $ = cheerioHtmlFile(htmlfile);
     return runChecks(checksfile, $)
     
 };
+
 
 var checkUrl = function(url, checksfile) {
 
@@ -76,8 +82,7 @@ var checkUrl = function(url, checksfile) {
         if (result instanceof Error) {
             console.log("Unable to retrieve content from url: %s Error: %s. Exiting.", url, result.toString());
             process.exit(1);
-        }
-        else {
+        } else {
             //console.log(("retrieve following markup: " + result.toString()));
             $ = cheerio.load(result);
             var out = runChecks(checksfile, $);
@@ -102,8 +107,10 @@ if(require.main == module) {
     
     
     if (program.url) {
+        // Url was passed at command line.
         checkUrl(program.url, program.checks);
     } else {
+        // File was passed at command line.
         var checkJson = checkHtmlFile(program.file, program.checks);
         printOutput(checkJson);
     } 
